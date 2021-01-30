@@ -36,6 +36,24 @@
 (require 's)
 (require 'cl-lib)
 
+(defgroup homebrew-manager nil
+  "A package manager for packages installed with homebrew"
+  :prefix "hbm-"
+  :group 'applications)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Customization Variables
+(defcustom hbm-name-column-width 30
+  "Width of the package name column."
+  :type 'integer
+  :group 'homebrew-manager)
+
+(defcustom hbm-version-column-width 10
+  "Width of the package version column."
+  :type 'integer
+  :group 'homebrew-manager)
+
+
 (defun homebrew--call (cmd &rest arguments)
   "Call brew CMD with provided ARGUMENTS."
   (let ((command (format "brew %s%s%s" cmd (if arguments " " "") (string-join arguments " "))))
@@ -62,10 +80,10 @@
   (shell-command-to-string "brew update")
 
   (setq truncate-lines t)
-  (setq tabulated-list-format [("Name" 20 t)
-                               ("Version" 10 nil)
+  (setq tabulated-list-format `[("Name" ,hbm-name-column-width t)
+                               ("Version" ,hbm-version-column-width nil)
                                ("Leaf" 4 nil)
-                               ("Outdated" 1 nil)])
+                               ("Outdated" 0 nil)])
 
   (setq tabulated-list-entries #'homebrew--list-packages)
 
