@@ -73,6 +73,12 @@
       (-map #'filter (homebrew--call "list" "--version")))))
 
 
+(defvar brew-package-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    map)
+  "Local keymap for `brew-package-mode' buffers.")
+
 (define-derived-mode brew-package-mode tabulated-list-mode "homebrew-package-list"
   "A mode to list all your homebrew installed packages."
 
