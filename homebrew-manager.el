@@ -75,8 +75,12 @@
 (defvar brew-package-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map (kbd "RET") #'homebrew-package-info)
     map)
   "Local keymap for `brew-package-mode' buffers.")
+
+(when (bound-and-true-p evil-make-overriding-map)
+  (evil-make-overriding-map brew-package-mode-map 'normal))
 
 (define-derived-mode brew-package-mode tabulated-list-mode "homebrew-package-list"
   "A mode to list all your homebrew installed packages."
