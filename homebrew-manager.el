@@ -80,7 +80,7 @@
     map)
   "Local keymap for `brew-package-mode' buffers.")
 
-(when (bound-and-true-p evil-make-overriding-map)
+(with-eval-after-load 'evil
   (evil-make-overriding-map brew-package-mode-map 'normal))
 
 (define-derived-mode brew-package-mode tabulated-list-mode "homebrew-package-list"
