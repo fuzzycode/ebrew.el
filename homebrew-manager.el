@@ -93,6 +93,8 @@
 
   (setq tabulated-list-entries #'homebrew--list-packages)
 
+  (setq tabulated-list-padding 2)
+
   (tabulated-list-init-header)
   (tabulated-list-print))
 
