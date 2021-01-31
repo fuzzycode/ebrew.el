@@ -98,6 +98,18 @@
   (tabulated-list-init-header)
   (tabulated-list-print))
 
+;;;;;;;;;;;;;;;;;;
+;; Predicates
+
+
+(defun homebrew-package-outdated-p (item)
+  "Check if ITEM is outdated or not."
+  (s-present? (aref item 3)))
+
+(defun homebrew-package-leaf-p (item)
+  "Check if ITEM is a leaf or not."
+  (s-present? (aref item 2)))
+
 ;;;###autoload
 (defun homebrew-package-info (&optional package)
   "Show the information for PACKAGE or the current package at point."
