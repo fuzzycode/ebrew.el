@@ -97,6 +97,19 @@
   (tabulated-list-print))
 
 ;;;###autoload
+(defun homebrew-package-info (&optional package)
+  "Show the information for PACKAGE or the current package at point."
+  (interactive)
+  (let* ((pkg (or package (tabulated-list-get-id)))
+         (buffer (generate-new-buffer (format "*brew info: %s*" pkg))))
+    (with-current-buffer buffer
+      (insert (shell-command-to-string (format "brew info %s" pkg)))
+      (goto-char (point-min))
+      (help-mode)
+      (goto-address-mode))
+    (display-buffer buffer)))
+
+;;;###autoload
 (defun homebrew-list-packages ()
   "Lists all homebrew installed packages in a tabulated list."
   (interactive)
