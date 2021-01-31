@@ -56,9 +56,8 @@
 
 (defun homebrew--call (cmd &rest arguments)
   "Call brew CMD with provided ARGUMENTS."
-  (let ((command (format "brew %s%s%s" cmd (if arguments " " "") (string-join arguments " "))))
-    (-filter #'s-present?
-             (s-split "\n" (shell-command-to-string command)))))
+  (let ((command (format "brew %s %s" cmd (s-join " " arguments))))
+    (s-split "\n" (shell-command-to-string command) t)))
 
 (defun homebrew--list-packages ()
   "List all packages installed through brew."
