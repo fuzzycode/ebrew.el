@@ -43,6 +43,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Customization Variables
+
 (defcustom hbm-name-column-width 30
   "Width of the package name column."
   :type 'integer
@@ -53,6 +54,9 @@
   :type 'integer
   :group 'homebrew-manager)
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Internals
 
 (defun homebrew--call (cmd &rest arguments)
   "Call brew CMD with provided ARGUMENTS."
@@ -73,6 +77,10 @@
                                                        (if (-contains? pinned name) '("*") '(""))))))))
       (-map #'filter (homebrew--call "list" "--version")))))
 
+(defun homebrew-package--apply-packages (action packages)
+  "Call brew ACTION with the list of PACKAGES as argument."
+  (shell-command-to-string (format "brew %s %s" action (s-join " " packages))))
+
 
 (defvar brew-package-mode-map
   (let ((map (make-sparse-keymap)))
@@ -85,6 +93,7 @@
     (define-key map (kbd "p") #'homebrew-package-pin)
     (define-key map (kbd "P") #'homebrew-package-unpin)
     (define-key map (kbd "a") #'homebrew-package-upgrade-all)
+    (define-key map (kbd "x") #'homebrew-package-execute)
     map)
   "Local keymap for `brew-package-mode' buffers.")
 
@@ -159,6 +168,34 @@
   (interactive)
   (when (yes-or-no-p "Upgrade all packages?")
     (message "Updated")))
+
+(defun homebrew-package-execute ()
+  "Apply the selected actions to all tagged packages."
+  (interactive)
+  (let (update-list delete-list pinned-list unpinned-list tag id)
+    (save-excursion
+      (goto-char (point-min))
+        (while (not (eobp)) ;; scan the buffer for tagged items
+          (setq tag (char-after))
+          (setq id (tabulated-list-get-id))
+          (cond ((eq tag ?D) (push id delete-list))
+                ((eq tag ?U) (push id update-list))
+                ((eq tag ?p) (push id pinned-list))
+                ((eq tag ?P) (push id unpinned-list)))
+          (forward-line))
+        ;; Sanity check
+        (unless (or update-list delete-list pinned-list unpinned-list)
+          (user-error "No package marked for action"))
+
+        (when pinned-list
+          (homebrew-package--apply-packages "pin" pinned-list))
+        (when unpinned-list
+          (homebrew-package--apply-packages "unpin" unpinned-list))
+        (when update-list
+          (homebrew-package--apply-packages "upgrade" update-list))
+        (when delete-list
+          (homebrew-package--apply-packages "uninstall" delete-list))))
+  (tabulated-list-print))
 
 ;;;###autoload
 (defun homebrew-package-info (&optional package)
