@@ -62,13 +62,15 @@
 (defun homebrew--list-packages ()
   "List all packages installed through brew."
   (let ((leaves (homebrew--call "leaves"))
-        (outdated (homebrew--call "outdated")))
+        (outdated (homebrew--call "outdated"))
+        (pinned (homebrew--call "pinned")))
     (cl-labels ((filter (item)
                         (let* ((items (split-string item))
                                (name (car items)))
                           (list name (vconcat (-concat items
                                                        (if (-contains? leaves name) '("*") '(""))
-                                                       (if (-contains? outdated name) '("!") '(""))))))))
+                                                       (if (-contains? outdated name) '("*") '(""))
+                                                       (if (-contains? pinned name) '("*") '(""))))))))
       (-map #'filter (homebrew--call "list" "--version")))))
 
 
@@ -89,7 +91,8 @@
   (setq tabulated-list-format `[("Name" ,hbm-name-column-width t)
                                ("Version" ,hbm-version-column-width nil)
                                ("Leaf" 4 nil)
-                               ("Outdated" 0 nil)])
+                               ("Outdated" 8 nil)
+                               ("Pinned" 0 nil)])
 
   (setq tabulated-list-entries #'homebrew--list-packages)
 
@@ -101,6 +104,9 @@
 ;;;;;;;;;;;;;;;;;;
 ;; Predicates
 
+(defun homebrew-package-pinned-p (item)
+  "Check if ITEM is pinned or not."
+  (s-present? (aref item 4)))
 
 (defun homebrew-package-outdated-p (item)
   "Check if ITEM is outdated or not."
