@@ -34,7 +34,7 @@
 (require 'tabulated-list)
 (require 'dash)
 (require 's)
-(require 'cl-lib)
+(eval-when-compile (require 'cl-lib))
 
 (defgroup homebrew-manager nil
   "A package manager for packages installed with homebrew"
