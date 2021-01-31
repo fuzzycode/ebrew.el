@@ -76,6 +76,7 @@
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "RET") #'homebrew-package-info)
+    (define-key map (kbd "U") #'homebrew-update-package-list)
     map)
   "Local keymap for `brew-package-mode' buffers.")
 
@@ -84,10 +85,6 @@
 
 (define-derived-mode brew-package-mode tabulated-list-mode "homebrew-package-list"
   "A mode to list all your homebrew installed packages."
-
-  ;; Ensure that brew is up to date when entering
-  (shell-command-to-string "brew update")
-
   (setq truncate-lines t)
   (setq tabulated-list-format `[("Name" ,hbm-name-column-width t)
                                ("Version" ,hbm-version-column-width nil)
@@ -111,6 +108,14 @@
       (help-mode)
       (goto-address-mode))
     (display-buffer buffer)))
+
+;;;###autoload
+(defun homebrew-update-package-list ()
+  "Run brew update to get the newest information."
+  (interactive)
+  (homebrew--call "update")
+  (tabulated-list-print)
+  (message "Homebrew package list updated"))
 
 ;;;###autoload
 (defun homebrew-list-packages ()
