@@ -78,7 +78,13 @@
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "RET") #'homebrew-package-info)
+    (define-key map (kbd "m") #'homebrew-package-mark-unmark)
     (define-key map (kbd "U") #'homebrew-update-package-list)
+    (define-key map (kbd "d") #'homebrew-package-delete)
+    (define-key map (kbd "u") #'homebrew-package-update)
+    (define-key map (kbd "p") #'homebrew-package-pin)
+    (define-key map (kbd "P") #'homebrew-package-unpin)
+    (define-key map (kbd "a") #'homebrew-package-upgrade-all)
     map)
   "Local keymap for `brew-package-mode' buffers.")
 
@@ -115,6 +121,44 @@
 (defun homebrew-package-leaf-p (item)
   "Check if ITEM is a leaf or not."
   (s-present? (aref item 2)))
+
+;;;;;;;;;;;;;;;;;;
+;; Interaction
+
+(defun homebrew-package-mark-unmark ()
+  "Clear any tags on the given item."
+  (interactive)
+  (tabulated-list-put-tag "" t))
+
+(defun homebrew-package-pin ()
+  "Mark item at point for pinning."
+  (interactive)
+  (unless (homebrew-package-pinned-p (tabulated-list-get-entry) )
+    (tabulated-list-put-tag "p" t)))
+
+(defun homebrew-package-unpin ()
+  "Mark item at point for un-pinning."
+  (interactive)
+  (when (homebrew-package-pinned-p (tabulated-list-get-entry))
+    (tabulated-list-put-tag "P" t)))
+
+(defun homebrew-package-update ()
+  "Mark item at point for updating."
+  (interactive)
+  (when (homebrew-package-outdated-p (tabulated-list-get-entry))
+    (tabulated-list-put-tag "U" t)))
+
+(defun homebrew-package-delete ()
+  "Mark item at point for deletion."
+  (interactive)
+  (when (homebrew-package-leaf-p (tabulated-list-get-entry))
+    (tabulated-list-put-tag "D" t)))
+
+(defun homebrew-package-upgrade-all ()
+  "Upgrade all outdated packages."
+  (interactive)
+  (when (yes-or-no-p "Upgrade all packages?")
+    (message "Updated")))
 
 ;;;###autoload
 (defun homebrew-package-info (&optional package)
