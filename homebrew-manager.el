@@ -229,7 +229,7 @@
 (defun homebrew-list-packages ()
   "Lists all homebrew installed packages in a tabulated list."
   (interactive)
-  (let ((buffer (generate-new-buffer "*brew list*")))
+  (let ((buffer (generate-new-buffer "*brew user list*")))
     (with-current-buffer buffer
       (brew-package-mode))
     (display-buffer buffer)))
