@@ -221,9 +221,12 @@
 (defun homebrew-update-package-list ()
   "Run brew update to get the newest information."
   (interactive)
-  (homebrew--call "update")
-  (tabulated-list-print)
-  (message "Homebrew package list updated"))
+  (deferred:$
+    (deferred:process-shell "brew" "update")
+    (deferred:nextc it
+      (lambda (_)
+        (tabulated-list-print)
+        (message "Homebrew package list updated")))))
 
 ;;;###autoload
 (defun homebrew-list-packages ()
