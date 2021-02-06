@@ -9,7 +9,7 @@
 ;; Version: 0.0.1
 ;; Keywords:
 ;; Homepage: https://github.com/fuzzycode/homebrew-manager
-;; Package-Requires: ((emacs "24.3") (s "1.11.0") (dash "2.12.0"))
+;; Package-Requires: ((emacs "24.3") (s "1.11.0") (dash "2.12.0") (deferred "0.5.1") (xterm-color "2.0"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -34,6 +34,8 @@
 (require 'tabulated-list)
 (require 'dash)
 (require 's)
+(require 'deferred)
+(require 'xterm-color)
 (eval-when-compile (require 'cl-lib))
 
 (defgroup homebrew-manager nil
@@ -201,14 +203,19 @@
 (defun homebrew-package-info (&optional package)
   "Show the information for PACKAGE or the current package at point."
   (interactive)
-  (let* ((pkg (or package (tabulated-list-get-id)))
-         (buffer (generate-new-buffer (format "*brew info: %s*" pkg))))
-    (with-current-buffer buffer
-      (insert (shell-command-to-string (format "brew info %s" pkg)))
-      (goto-char (point-min))
-      (help-mode)
-      (goto-address-mode))
-    (display-buffer buffer)))
+  (let ((pkg (or package (tabulated-list-get-id))))
+    (deferred:$
+      (deferred:process-shell "brew" "info" "--formula" pkg)
+      (deferred:nextc it
+        (lambda (info)
+          (let ((buffer (generate-new-buffer (format "*brew info: %s*" pkg))))
+            (with-current-buffer buffer
+              (insert (xterm-color-filter info))
+              (goto-char (point-min))
+              (help-mode)
+              (goto-address-mode))
+            (display-buffer buffer))))))
+  package)
 
 ;;;###autoload
 (defun homebrew-update-package-list ()
