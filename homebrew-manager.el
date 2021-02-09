@@ -89,7 +89,7 @@
   "Parse OUTDATED searching for NAME, returning the latest known version of NAME or nil if not found."
   (cdr (assoc-string name outdated)))
 
-(defun brew--update-package-list ()
+(defun homebrew--update-package-list ()
   "Update the list of packages async."
   (deferred:$
     (deferred:parallel
@@ -117,7 +117,7 @@
         (let ((buffer (get-buffer-create "*Brew installed packages*")))
           (with-current-buffer buffer
             (switch-to-buffer buffer)
-            (brew-package-mode)
+            (homebrew-package-mode)
             (setq tabulated-list-entries (-map #'homebrew--package-render packages))
             (tabulated-list-print))))))
   t)
@@ -134,14 +134,14 @@
     (deferred:nextc it
       (lambda (_) (when delete (deferred:process-shell "brew" "delete" (s-join " " (-map #'homebrew-package-name delete))))))
     (deferred:nextc it
-      (lambda (_) (brew--update-package-list))))
+      (lambda (_) (homebrew--update-package-list))))
   t)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Mode
 
-(defvar brew-package-mode-map
+(defvar homebrew-package-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "RET") #'homebrew-package-info)
@@ -154,12 +154,12 @@
     (define-key map (kbd "a") #'homebrew-package-upgrade-all)
     (define-key map (kbd "x") #'homebrew-package-execute)
     map)
-  "Local keymap for `brew-package-mode' buffers.")
+  "Local keymap for `homebrew-package-mode' buffers.")
 
 (with-eval-after-load 'evil
-  (evil-make-overriding-map brew-package-mode-map 'normal))
+  (evil-make-overriding-map homebrew-package-mode-map 'normal))
 
-(define-derived-mode brew-package-mode tabulated-list-mode "homebrew-package-list"
+(define-derived-mode homebrew-package-mode tabulated-list-mode "homebrew-package-list"
   "A mode to list all your homebrew installed packages."
   (setq truncate-lines t)
   (setq tabulated-list-format `[("Name" ,hbm-name-column-width t)
@@ -257,7 +257,7 @@
     (deferred:process-shell "brew" "update")
     (deferred:nextc it
       (lambda (_)
-        (brew--update-package-list)))))
+        (homebrew--update-package-list)))))
 
 ;;;###autoload
 (defun homebrew-list-packages ()
@@ -265,7 +265,7 @@
   (interactive)
   (message "Fetching list of installed packages")
   (display-buffer (generate-new-buffer "*Brew installed packages*"))
-  (brew--update-package-list))
+  (homebrew--update-package-list))
 
 
 (provide 'homebrew-manager)
