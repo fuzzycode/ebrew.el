@@ -1,4 +1,4 @@
-;;; homebrew-manager.el --- Manage your homebrew packages -*- lexical-binding: t; -*-
+;;; ebrew.el --- Manage your homebrew packages -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2021 Björn Larsson
 ;;
@@ -26,46 +26,46 @@
 (require 'xterm-color)
 (eval-when-compile (require 'cl-lib))
 
-(defgroup homebrew-manager nil
+(defgroup ebrew nil
   "A package manager for packages installed with homebrew"
-  :prefix "hbm-"
+  :prefix "ebrew-"
   :group 'applications)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Customization Variables
 
-(defcustom hbm-name-column-width 30
+(defcustom ebrew-name-column-width 30
   "Width of the package name column."
   :type 'integer
-  :group 'homebrew-manager)
+  :group 'ebrew)
 
-(defcustom hbm-version-column-width 10
+(defcustom ebrew-version-column-width 10
   "Width of the package version column."
   :type 'integer
   :group 'homebrew-manager)
 
 
-(defcustom hbm-outdated-version-face "orange"
+(defcustom ebrew-outdated-version-face "orange"
   "Face to use when rendering version of outdated packages."
   :type'face
-  :group 'homebrew-manager)
+  :group 'ebrew)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Internals
-(cl-defstruct (homebrew-package (:constructor homebrew-package-create)
+(cl-defstruct (ebrew-package (:constructor ebrew-package-create)
                                 (:copier nil))
   "Store information about an installed homebrew package"
   name version leaf? pinned? latest type)
 
-(defun homebrew--package-render (package)
+(defun ebrew--package-render (package)
   "Render the PACKAGE struct in a tabulated-list friendly format."
-  (list package (vector (homebrew-package-name package)
-                        (homebrew-package-version package)
-                        (if (homebrew-package-latest package) (propertize (homebrew-package-latest package) 'font-lock-face `(:foreground ,hbm-outdated-version-face)) "")
-                        (if (homebrew-package-leaf? package) "*" "")
-                        (if (homebrew-package-pinned? package) "*" ""))))
+  (list package (vector (ebrew-package-name package)
+                        (ebrew-package-version package)
+                        (if (ebrew-package-latest package) (propertize (ebrew-package-latest package) 'font-lock-face `(:foreground ,ebrew-outdated-version-face)) "")
+                        (if (ebrew-package-leaf? package) "*" "")
+                        (if (ebrew-package-pinned? package) "*" ""))))
 
-(defun homebrew--parse-outdated (outdated)
+(defun ebrew--parse-outdated (outdated)
   "Parse the list of OUTDATED packages into an alist of name version pairs."
   (-map (lambda (item)
           (let* ((split (s-split "<" item))
@@ -73,11 +73,11 @@
                  (name (car (s-split " " (nth 0 split)))))
             `(,name . ,latest))) outdated))
 
-(defun homebrew--get-latest-version (name outdated)
+(defun ebrew--get-latest-version (name outdated)
   "Parse OUTDATED searching for NAME, returning the latest known version of NAME or nil if not found."
   (cdr (assoc-string name outdated)))
 
-(defun homebrew--update-package-list ()
+(defun ebrew--update-package-list ()
   "Update the list of packages async."
   (deferred:$
     (deferred:parallel
@@ -90,14 +90,14 @@
         (let ((leaves (s-split "\n" (nth 0 result) t))
               (formula (s-split "\n" (nth 1 result) t))
               (pinned (s-split "\n" (nth 2 result) t))
-              (outdated (homebrew--parse-outdated (s-split "\n" (nth 3 result)))))
+              (outdated (ebrew--parse-outdated (s-split "\n" (nth 3 result)))))
           (cl-loop for f in formula
                    for name = (nth 0 (s-split " " f))
                    for version = (nth 1 (s-split " " f))
-                   collect (homebrew-package-create :name name
+                   collect (ebrew-package-create :name name
                                                     :type 'formula
                                                     :version version
-                                                    :latest (homebrew--get-latest-version name outdated)
+                                                    :latest (ebrew--get-latest-version name outdated)
                                                     :pinned? (-contains? pinned name)
                                                     :leaf? (-contains? leaves name))))))
     (deferred:nextc it
@@ -105,54 +105,54 @@
         (let ((buffer (get-buffer-create "*Brew installed packages*")))
           (with-current-buffer buffer
             (switch-to-buffer buffer)
-            (homebrew-package-mode)
-            (setq tabulated-list-entries (-map #'homebrew--package-render packages))
+            (ebrew-package-mode)
+            (setq tabulated-list-entries (-map #'ebrew--package-render packages))
             (tabulated-list-print))))))
   t)
 
-(defun homebrew--apply-changes (update delete pin unpin)
+(defun ebrew--apply-changes (update delete pin unpin)
   "Apply the changes to all tagged packages."
   (deferred:$
     (deferred:next
-      (lambda () (when pin (deferred:process-shell "brew" "pin" (s-join " " (-map #'homebrew-package-name pin))))))
+      (lambda () (when pin (deferred:process-shell "brew" "pin" (s-join " " (-map #'ebrew-package-name pin))))))
     (deferred:nextc it
-      (lambda (_) (when unpin (deferred:process-shell "brew" "unpin" (s-join " " (-map #'homebrew-package-name unpin))))))
+      (lambda (_) (when unpin (deferred:process-shell "brew" "unpin" (s-join " " (-map #'ebrew-package-name unpin))))))
     (deferred:nextc it
-      (lambda (_) (when update (deferred:process-shell "brew" "upgrade" (s-join " " (-map #'homebrew-package-name update))))))
+      (lambda (_) (when update (deferred:process-shell "brew" "upgrade" (s-join " " (-map #'ebrew-package-name update))))))
     (deferred:nextc it
-      (lambda (_) (when delete (deferred:process-shell "brew" "delete" (s-join " " (-map #'homebrew-package-name delete))))))
+      (lambda (_) (when delete (deferred:process-shell "brew" "delete" (s-join " " (-map #'ebrew-package-name delete))))))
     (deferred:nextc it
-      (lambda (_) (homebrew--update-package-list))))
+      (lambda (_) (ebrew--update-package-list))))
   t)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Mode
 
-(defvar homebrew-package-mode-map
+(defvar ebrew-package-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
-    (define-key map (kbd "RET") #'homebrew-package-info)
-    (define-key map (kbd "m") #'homebrew-package-mark-unmark)
-    (define-key map (kbd "U") #'homebrew-update-package-list)
-    (define-key map (kbd "d") #'homebrew-package-delete)
-    (define-key map (kbd "u") #'homebrew-package-update)
-    (define-key map (kbd "p") #'homebrew-package-pin)
-    (define-key map (kbd "P") #'homebrew-package-unpin)
-    (define-key map (kbd "a") #'homebrew-package-upgrade-all)
-    (define-key map (kbd "x") #'homebrew-package-execute)
+    (define-key map (kbd "RET") #'ebrew-package-info)
+    (define-key map (kbd "m") #'ebrew-package-mark-unmark)
+    (define-key map (kbd "U") #'ebrew-update-package-list)
+    (define-key map (kbd "d") #'ebrew-package-delete)
+    (define-key map (kbd "u") #'ebrew-package-update)
+    (define-key map (kbd "p") #'ebrew-package-pin)
+    (define-key map (kbd "P") #'ebrew-package-unpin)
+    (define-key map (kbd "a") #'ebrew-package-upgrade-all)
+    (define-key map (kbd "x") #'ebrew-package-execute)
     map)
-  "Local keymap for `homebrew-package-mode' buffers.")
+  "Local keymap for `ebrew-package-mode' buffers.")
 
 (with-eval-after-load 'evil
-  (evil-make-overriding-map homebrew-package-mode-map 'normal))
+  (evil-make-overriding-map ebrew-package-mode-map 'normal))
 
-(define-derived-mode homebrew-package-mode tabulated-list-mode "homebrew-package-list"
+(define-derived-mode ebrew-package-mode tabulated-list-mode "ebrew-package-list"
   "A mode to list all your homebrew installed packages."
   (setq truncate-lines t)
-  (setq tabulated-list-format `[("Name" ,hbm-name-column-width t)
-                               ("Version" ,hbm-version-column-width nil)
-                               ("Latest" ,hbm-version-column-width nil)
+  (setq tabulated-list-format `[("Name" ,ebrew-name-column-width t)
+                               ("Version" ,ebrew-version-column-width nil)
+                               ("Latest" ,ebrew-version-column-width nil)
                                ("Leaf" 4 nil)
                                ("Pinned" 6 nil)])
 
@@ -162,42 +162,42 @@
 ;;;;;;;;;;;;;;;;;;
 ;; Interaction
 
-(defun homebrew-package-mark-unmark ()
+(defun ebrew-package-mark-unmark ()
   "Clear any tags on the given item."
   (interactive)
   (tabulated-list-put-tag "" t))
 
-(defun homebrew-package-pin ()
+(defun ebrew-package-pin ()
   "Mark item at point for pinning."
   (interactive)
-  (unless (homebrew-package-pinned? (tabulated-list-get-id) )
+  (unless (ebrew-package-pinned? (tabulated-list-get-id) )
     (tabulated-list-put-tag "p" t)))
 
-(defun homebrew-package-unpin ()
+(defun ebrew-package-unpin ()
   "Mark item at point for un-pinning."
   (interactive)
-  (when (homebrew-package-pinned? (tabulated-list-get-id))
+  (when (ebrew-package-pinned? (tabulated-list-get-id))
     (tabulated-list-put-tag "P" t)))
 
-(defun homebrew-package-update ()
+(defun ebrew-package-update ()
   "Mark item at point for updating."
   (interactive)
-  (when (homebrew-package-latest (tabulated-list-get-id))
+  (when (ebrew-package-latest (tabulated-list-get-id))
     (tabulated-list-put-tag "U" t)))
 
-(defun homebrew-package-delete ()
+(defun ebrew-package-delete ()
   "Mark item at point for deletion."
   (interactive)
-  (when (homebrew-package-leaf? (tabulated-list-get-id))
+  (when (ebrew-package-leaf? (tabulated-list-get-id))
     (tabulated-list-put-tag "D" t)))
 
-(defun homebrew-package-upgrade-all ()
+(defun ebrew-package-upgrade-all ()
   "Upgrade all outdated packages."
   (interactive)
   (when (yes-or-no-p "Upgrade all packages?")
     (message "Updated")))
 
-(defun homebrew-package-execute ()
+(defun ebrew-package-execute ()
   "Apply the selected actions to all tagged packages."
   (interactive)
   (let (update-list delete-list pinned-list unpinned-list tag id)
@@ -214,13 +214,13 @@
       ;; Sanity check
       (unless (or update-list delete-list pinned-list unpinned-list)
         (user-error "No package marked for action"))
-      (homebrew--apply-changes update-list delete-list pinned-list unpinned-list))))
+      (ebrew--apply-changes update-list delete-list pinned-list unpinned-list))))
 
 ;;;###autoload
-(defun homebrew-package-info (&optional package)
+(defun ebrew-package-info (&optional package)
   "Show the information for PACKAGE or the current package at point."
   (interactive)
-  (let ((pkg (or package (homebrew-package-name (tabulated-list-get-id)))))
+  (let ((pkg (or package (ebrew-package-name (tabulated-list-get-id)))))
     (deferred:$
       (deferred:process-shell "brew" "info" "--formula" pkg)
       (deferred:nextc it
@@ -238,23 +238,23 @@
   package)
 
 ;;;###autoload
-(defun homebrew-update-package-list ()
+(defun ebrew-update-package-list ()
   "Run brew update to get the newest information."
   (interactive)
   (deferred:$
     (deferred:process-shell "brew" "update")
     (deferred:nextc it
       (lambda (_)
-        (homebrew--update-package-list)))))
+        (ebrew--update-package-list)))))
 
 ;;;###autoload
-(defun homebrew-list-packages ()
+(defun ebrew-list-packages ()
   "Lists all homebrew installed packages in a tabulated list."
   (interactive)
   (message "Fetching list of installed packages")
   (display-buffer (generate-new-buffer "*Brew installed packages*"))
-  (homebrew--update-package-list))
+  (ebrew--update-package-list))
 
 
-(provide 'homebrew-manager)
-;;; homebrew-manager.el ends here
+(provide 'ebrew)
+;;; ebrew.el ends here
