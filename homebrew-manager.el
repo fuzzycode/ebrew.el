@@ -1,4 +1,4 @@
-;;; homebrew-manager.el --- Manage your homebrew packages through Emacs -*- lexical-binding: t; -*-
+;;; homebrew-manager.el --- Manage your homebrew packages -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2021 Björn Larsson
 ;;
@@ -7,7 +7,7 @@
 ;; Created: January 30, 2021
 ;; Modified: January 30, 2021
 ;; Version: 0.0.1
-;; Keywords:
+;; Keywords: utility homebrew system
 ;; Homepage: https://github.com/fuzzycode/homebrew-manager
 ;; Package-Requires: ((emacs "24.3") (s "1.11.0") (dash "2.12.0") (deferred "0.5.1") (xterm-color "2.0"))
 ;;
