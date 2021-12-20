@@ -251,9 +251,10 @@
 (defun ebrew-list-packages ()
   "Lists all homebrew installed packages in a tabulated list."
   (interactive)
-  (message "Fetching list of installed packages")
-  (display-buffer (generate-new-buffer "*Brew installed packages*"))
-  (ebrew--update-package-list))
+  (let ((progress (make-progress-reporter  "Fetching list of installed packages")))
+    (display-buffer (generate-new-buffer "*Brew installed packages*"))
+    (ebrew--update-package-list)
+    (progress-reporter-done progress)))
 
 
 (provide 'ebrew)
